@@ -13,6 +13,7 @@ from mapping import *
 
 from pyhpi import Session, EntityPath, FumiRdr, DimiRdr
 from pyhpi.utils import fumi_upgrade_status_str, dimi_test_status_str
+from pyhpi.errors import SaHpiError
 from robot.utils.connectioncache import ConnectionCache
 from robot.utils import asserts
 from robot.utils import secs_to_timestr, timestr_to_secs
@@ -271,12 +272,19 @@ class HpiLibrary(Logging, PerConnectionStorage):
         state = bank.status()
         asserts.fail_unless_equal(expected_state, state, msg, values)
 
-    def wait_until_upgrade_state_is(self, state):
+    def wait_until_upgrade_state_is(self, state, may_fail=False):
         state = find_fumi_upgrade_state(state)
         bank = self._cp['selected_bank']
         start_time = time.time()
         while time.time() < start_time + self._timeout:
-            _state = bank.status()
+            try:
+                _state = bank.status()
+            except SaHpiError:
+                if may_fail:
+                    time.sleep(self._poll_interval)
+                    continue
+                else:
+                    raise
             self._debug('Current upgrade state is %s' %
                     fumi_upgrade_status_str(_state))
             if _state == state:
