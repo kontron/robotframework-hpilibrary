@@ -107,7 +107,7 @@ class HpiLibrary(Logging, PerConnectionStorage):
             raise RuntimeError('Invalid entity path "%s"' % ep)
         self._info('Setting entity path to %s' % (ep,))
         self._cp['entity_path'] = ep
-        
+
     def _selected_resource(self):
         path = self._cp['entity_path']
         res = self._s.get_resources_by_entity_path(path)
@@ -132,6 +132,9 @@ class HpiLibrary(Logging, PerConnectionStorage):
             raise AssertionError('No FUMI RDR with id "%s" found.' % (id,))
         self._cp['selected_rdr'] = rdr
 
+    def _selected_rdr(self):
+        return self._cp['selected_rdr']
+
     ###
     # General
     ###
@@ -154,18 +157,21 @@ class HpiLibrary(Logging, PerConnectionStorage):
 
     def select_logical_bank(self):
         res = self._selected_resource()
-        rdr = self._cp['selected_rdr']
+        rdr = self._selected_rdr()
         fumi = res.fumi_handler_by_rdr(rdr)
         bank = fumi.logical_bank()
-        self._cp['selected_bank'] = bank
+        self._cp['selected_fumi_bank'] = bank
 
     def select_bank_number(self, number):
         number = int(number)
         res = self._selected_resource()
-        rdr = self._cp['selected_rdr']
+        rdr = self._selected_rdr()
         fumi = res.fumi_handler_by_rdr(rdr)
         bank = fumi.bank(number)
-        self._cp['selected_bank'] = bank
+        self._cp['selected_fumi_bank'] = bank
+
+    def _selected_fumi_bank(self):
+        return self._cp['selected_fumi_bank']
 
     def fumi_rdr_should_exist(self, id):
         """Fails unless the specified FUMI RDR exist.
@@ -184,58 +190,59 @@ class HpiLibrary(Logging, PerConnectionStorage):
 
     def fumi_number_of_selected_rdr_should_be(self, expected_num, msg=None,
             values=True):
-        rdr = self._cp['selected_rdr']
+        res = self._selected_resource()
+        rdr = self._selected_rdr()
         expected_num = int(expected_num)
         asserts.fail_unless_equal(expected_num, rdr.fumi_num, msg, values)
 
     def access_protocol_of_selected_rdr_should_be(self, expected_protocol,
             msg=None, values=True):
-        rdr = self._cp['selected_rdr']
+        rdr = self._selected_rdr()
         expected_protocol = find_fumi_access_protocol(expected_protocol)
         asserts.fail_unless_equal(expected_protocol, rdr.access_protocol, msg,
                 values)
 
     def capabilities_of_selected_rdr_should_be(self, expected_capabilities,
             msg=None, values=True):
-        rdr = self._cp['selected_rdr']
+        rdr = self._selected_rdr()
         expected_capabilities = find_fumi_capabilities(expected_capabilities)
         asserts.fail_unless_equal(expected_capabilities, rdr.capability, msg,
                 values)
 
     def number_of_banks_of_selected_rdr_should_be(self, expected_number,
             msg=None, values=True):
-        rdr = self._cp['selected_rdr']
+        rdr = self._selected_rdr()
         expected_number = int(expected_number)
         asserts.fail_unless_equal(expected_number, rdr.num_banks, msg,
                 values)
 
     def size_of_selected_bank_should_be(self, expected_size, msg=None,
             values=True):
-        info = self._cp['selected_bank'].bank_info()
+        info = self._selected_fumi_bank().bank_info()
         expected_size = int(expected_size)
         asserts.fail_unless_equal(expected_size, info.size, msg, values)
 
     def identifier_of_selected_bank_should_be(self, expected_id, msg=None,
             values=True):
-        info = self._cp['selected_bank'].bank_info()
+        info = self._selected_fumi_bank().bank_info()
         asserts.fail_unless_equal(expected_id, str(info.identifier), msg,
                 values)
 
     def description_of_selected_bank_should_be(self, expected_description,
             msg=None, values=True):
-        info = self._cp['selected_bank'].bank_info()
+        info = self._selected_fumi_bank().bank_info()
         asserts.fail_unless_equal(expected_description, str(info.description), msg,
                 values)
 
     def datetime_of_selected_bank_should_be(self, expected_datetime, msg=None,
             values=True):
-        info = self._cp['selected_bank'].bank_info()
+        info = self._selected_fumi_bank().bank_info()
         asserts.fail_unless_equal(expected_datetime, str(info.date_time), msg,
                 values)
 
     def version_of_selected_bank_should_be(self, expected_major,
             expected_minor, expected_aux, msg=None, values=True):
-        info = self._cp['selected_bank'].bank_info()
+        info = self._selected_fumi_bank().bank_info()
         expected_major = int(expected_major)
         expected_minor = int(expected_minor)
         expected_aux = int(expected_aux)
@@ -245,36 +252,31 @@ class HpiLibrary(Logging, PerConnectionStorage):
                 msg, values)
 
     def set_source(self, uri):
-        bank = self._cp['selected_bank']
-        bank.set_source(uri)
+        self._selected_fumi_bank().set_source(uri)
 
     def start_validation(self):
-        bank = self._cp['selected_bank']
-        bank.start_validation()
+        self._selected_fumi_bank().start_validation()
 
     def start_installation(self):
-        bank = self._cp['selected_bank']
-        bank.start_installation()
+        self._selected_fumi_bank().start_installation()
 
     def start_activation(self):
         res = self._selected_resource()
-        rdr = self._cp['selected_rdr']
+        rdr = self._selected_rdr()
         fumi = res.fumi_handler_by_rdr(rdr)
         fumi.start_activation()
 
     def cancel_upgrade(self):
-        bank = self._cp['selected_bank']
-        bank.cancel()
+        self._selected_fumi_bank().cancel()
 
     def upgrade_state_should_be(self, expected_state, msg=None, values=True):
         expected_state = find_fumi_upgrade_state(expected_state)
-        bank = self._cp['selected_bank']
-        state = bank.status()
+        state = self._selected_fumi_bank().status()
         asserts.fail_unless_equal(expected_state, state, msg, values)
 
     def wait_until_upgrade_state_is(self, state, may_fail=False):
         state = find_fumi_upgrade_state(state)
-        bank = self._cp['selected_bank']
+        bank = self._selected_fumi_bank()
         start_time = time.time()
         while time.time() < start_time + self._timeout:
             try:
@@ -297,8 +299,7 @@ class HpiLibrary(Logging, PerConnectionStorage):
 
     def source_status_should_be(self, expected_status, msg=None, values=True):
         expected_status = find_fumi_source_status(expected_status)
-        bank = self._cp['selected_bank']
-        info = bank.source_info()
+        info = self._selected_fumi_bank().source_info()
         asserts.fail_unless_equal(expected_status, info.source_status.value,
                 msg, values)
 
