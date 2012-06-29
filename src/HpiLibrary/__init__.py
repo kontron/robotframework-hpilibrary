@@ -12,8 +12,10 @@ from utils import int_any_base, Logging, PerConnectionStorage
 from mapping import *
 
 from pyhpi import Session, EntityPath, FumiRdr, DimiRdr
+from pyhpi.utils import event_type_str
 from pyhpi.utils import fumi_upgrade_status_str, dimi_test_status_str
 from pyhpi.errors import SaHpiError
+from pyhpi.sahpi import SAHPI_ET_FUMI, SAHPI_ET_DIMI
 from robot.utils.connectioncache import ConnectionCache
 from robot.utils import asserts
 from robot.utils import secs_to_timestr, timestr_to_secs
@@ -64,6 +66,7 @@ class HpiLibrary(Logging, PerConnectionStorage):
 
         session = Session()
         session.open()
+        session.attach_event_listener()
 
         self._active_session = session
 
@@ -147,6 +150,74 @@ class HpiLibrary(Logging, PerConnectionStorage):
         else:
             raise AssertionError('An RPT with entity path %s does not exist'
                     % (ep,))
+
+    def product_id_of_selected_resource_should_be(self, expected_pid, msg=None,
+            values=True):
+        expected_pid = int_any_base(expected_pid)
+        info = self._selected_resource().rpt.resource_info
+        actual_pid = info.product_id
+        asserts.fail_unless_equal(expected_pid, actual_pid, msg, values)
+
+    def manufacturer_id_of_selected_resource_should_be(self, expected_mid,
+            msg=None, values=True):
+        expected_mid = int_any_base(expected_mid)
+        info = self._selected_resource().rpt.resource_info
+        actual_mid = info.manufacturer_id
+        asserts.fail_unless_equal(expected_mid, actual_mid, msg, values)
+
+    ###
+    # Events
+    ###
+    def clear_event_queue(self):
+        listener = self._s.event_listener
+        while True:
+            event = listener.get(timeout=0)
+            if event is None:
+                return
+
+    def wait_until_event_queue_contains_event_type(self, event_type,
+            may_fail=False):
+        listener = self._s.event_listener
+        event_type = find_event_type(event_type)
+        start_time = time.time()
+        end_time = start_time + self._timeout
+        timeout = end_time - time.time()
+        while timeout > 0:
+            try:
+                event = listener.get(timeout)
+                self._debug('Got event %s from queue' %
+                        event_type_str(event.event_type))
+            except SaHpiError:
+                if may_fail:
+                    time.sleep(self._poll_interval)
+                    continue
+                else:
+                    raise
+            if event.event_type == event_type:
+                self._cp['selected_event'] = event
+                return
+
+        raise AssertionError('No event with type %s in queue for %s'
+                % (event_type_str(event_type), secs_to_timestr(self._timeout)))
+
+    def _selected_event(self):
+        return self._cp['selected_event']
+
+    def upgrade_state_of_fumi_event_should_be(self, expected_state, msg=None,
+            values=True):
+        if self._selected_event().event_type != SAHPI_ET_FUMI:
+            raise RuntimeError('Event is not of type FUMI')
+        expected_state = find_fumi_upgrade_state(expected_state)
+        actual_state = self._selected_event().status
+        asserts.fail_unless_equal(expected_state, actual_state, msg, values)
+
+    def test_status_of_dimi_event_should_be(self, expected_status, msg=None,
+            values=True):
+        if self._selected_event().event_type != SAHPI_ET_DIMI:
+            raise RuntimeError('Event is not of type DIMI')
+        expected_status = find_dimi_test_status(expected_status)
+        actual_status = self._selected_event().run_status
+        asserts.fail_unless_equal(expected_status, actual_status, msg, values)
 
     ###
     # FUMI
@@ -260,6 +331,12 @@ class HpiLibrary(Logging, PerConnectionStorage):
     def start_installation(self):
         self._selected_fumi_bank().start_installation()
 
+    def start_rollback(self):
+        res = self._selected_resource()
+        rdr = self._selected_rdr()
+        fumi = res.fumi_handler_by_rdr(rdr)
+        fumi.start_rollback()
+
     def start_activation(self):
         res = self._selected_resource()
         rdr = self._selected_rdr()
@@ -268,6 +345,9 @@ class HpiLibrary(Logging, PerConnectionStorage):
 
     def cancel_upgrade(self):
         self._selected_fumi_bank().cancel()
+
+    def cleanup(self):
+        self._selected_fumi_bank().cleanup()
 
     def upgrade_state_should_be(self, expected_state, msg=None, values=True):
         expected_state = find_fumi_upgrade_state(expected_state)

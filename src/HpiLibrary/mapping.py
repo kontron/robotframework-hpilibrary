@@ -2,6 +2,9 @@ import pyhpi.sahpi
 
 from utils import find_attribute
 
+def find_event_type(event_type):
+    return find_attribute(pyhpi.sahpi, event_type, 'SAHPI_ET_')
+
 def find_fumi_access_protocol(proto):
     return find_attribute(pyhpi.sahpi, proto, 'SAHPI_FUMI_PROT_')
 
