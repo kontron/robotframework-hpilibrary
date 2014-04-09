@@ -254,7 +254,7 @@ class HpiLibrary(Logging, PerConnectionStorage):
 
     def fumi_rdr_should_exist(self, id):
         """Fails unless the specified FUMI RDR exist.
-        
+
         `id` is the ID string of the resource descriptor record. If the RDR is
         found, it will be automatically selected.
         """
@@ -451,8 +451,20 @@ class HpiLibrary(Logging, PerConnectionStorage):
             values=True):
         test = self._cp['selected_dimi_test']
         parameters = [p.name for p in test.parameters]
-        print parameters, expected_parameter
         asserts.fail_unless(expected_parameter in parameters, msg)
+
+    def default_value_of_parameter_of_selected_test_should_be(self,
+            parameter_name, expected_default_value, msg=None, values=True):
+        test = self._cp['selected_dimi_test']
+        try:
+            parameter = filter(
+                    lambda parameter: parameter.name == parameter_name,
+                    test.parameters)[0]
+        except IndexError:
+            raise RuntimeError('Parameter with name "%s" not found.',
+                    parameter_name)
+        asserts.fail_unless_equal(expected_default_value,
+                parameter.default, msg, values)
 
     def start_test(self, *parameters):
         _parameters = [ p.split('=', 1) for p in parameters ]
