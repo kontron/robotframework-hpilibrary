@@ -164,14 +164,14 @@ class HpiLibrary(Logging, PerConnectionStorage):
         expected_pid = int_any_base(expected_pid)
         info = self._selected_resource().rpt.resource_info
         actual_pid = info.product_id
-        asserts.fail_unless_equal(expected_pid, actual_pid, msg, values)
+        asserts.assert_equal(expected_pid, actual_pid, msg, values)
 
     def manufacturer_id_of_selected_resource_should_be(self, expected_mid,
             msg=None, values=True):
         expected_mid = int_any_base(expected_mid)
         info = self._selected_resource().rpt.resource_info
         actual_mid = info.manufacturer_id
-        asserts.fail_unless_equal(expected_mid, actual_mid, msg, values)
+        asserts.assert_equal(expected_mid, actual_mid, msg, values)
 
     ###
     # Events
@@ -217,7 +217,7 @@ class HpiLibrary(Logging, PerConnectionStorage):
             raise RuntimeError('Event is not of type FUMI')
         expected_state = find_fumi_upgrade_state(expected_state)
         actual_state = self._selected_event().status
-        asserts.fail_unless_equal(expected_state, actual_state, msg, values)
+        asserts.assert_equal(expected_state, actual_state, msg, values)
 
     def test_status_of_dimi_event_should_be(self, expected_status, msg=None,
             values=True):
@@ -225,7 +225,7 @@ class HpiLibrary(Logging, PerConnectionStorage):
             raise RuntimeError('Event is not of type DIMI')
         expected_status = find_dimi_test_status(expected_status)
         actual_status = self._selected_event().run_status
-        asserts.fail_unless_equal(expected_status, actual_status, msg, values)
+        asserts.assert_equal(expected_status, actual_status, msg, values)
 
     ###
     # FUMI
@@ -272,51 +272,51 @@ class HpiLibrary(Logging, PerConnectionStorage):
         res = self._selected_resource()
         rdr = self._selected_rdr()
         expected_num = int(expected_num)
-        asserts.fail_unless_equal(expected_num, rdr.fumi_num, msg, values)
+        asserts.assert_equal(expected_num, rdr.fumi_num, msg, values)
 
     def access_protocol_of_selected_rdr_should_be(self, expected_protocol,
             msg=None, values=True):
         rdr = self._selected_rdr()
         expected_protocol = find_fumi_access_protocol(expected_protocol)
-        asserts.fail_unless_equal(expected_protocol, rdr.access_protocol, msg,
+        asserts.assert_equal(expected_protocol, rdr.access_protocol, msg,
                 values)
 
     def capabilities_of_selected_rdr_should_be(self, expected_capabilities,
             msg=None, values=True):
         rdr = self._selected_rdr()
         expected_capabilities = find_fumi_capabilities(expected_capabilities)
-        asserts.fail_unless_equal(expected_capabilities, rdr.capability, msg,
+        asserts.assert_equal(expected_capabilities, rdr.capability, msg,
                 values)
 
     def number_of_banks_of_selected_rdr_should_be(self, expected_number,
             msg=None, values=True):
         rdr = self._selected_rdr()
         expected_number = int(expected_number)
-        asserts.fail_unless_equal(expected_number, rdr.num_banks, msg,
+        asserts.assert_equal(expected_number, rdr.num_banks, msg,
                 values)
 
     def size_of_selected_bank_should_be(self, expected_size, msg=None,
             values=True):
         info = self._selected_fumi_bank().bank_info()
         expected_size = int(expected_size)
-        asserts.fail_unless_equal(expected_size, info.size, msg, values)
+        asserts.assert_equal(expected_size, info.size, msg, values)
 
     def identifier_of_selected_bank_should_be(self, expected_id, msg=None,
             values=True):
         info = self._selected_fumi_bank().bank_info()
-        asserts.fail_unless_equal(expected_id, str(info.identifier), msg,
+        asserts.assert_equal(expected_id, str(info.identifier), msg,
                 values)
 
     def description_of_selected_bank_should_be(self, expected_description,
             msg=None, values=True):
         info = self._selected_fumi_bank().bank_info()
-        asserts.fail_unless_equal(expected_description, str(info.description), msg,
+        asserts.assert_equal(expected_description, str(info.description), msg,
                 values)
 
     def datetime_of_selected_bank_should_be(self, expected_datetime, msg=None,
             values=True):
         info = self._selected_fumi_bank().bank_info()
-        asserts.fail_unless_equal(expected_datetime, str(info.date_time), msg,
+        asserts.assert_equal(expected_datetime, str(info.date_time), msg,
                 values)
 
     def version_of_selected_bank_should_be(self, expected_major,
@@ -325,7 +325,7 @@ class HpiLibrary(Logging, PerConnectionStorage):
         expected_major = int(expected_major)
         expected_minor = int(expected_minor)
         expected_aux = int(expected_aux)
-        asserts.fail_unless_equal(
+        asserts.assert_equal(
                 (expected_major, expected_minor, expected_aux),
                 (info.major_version, info.minor_version, info.aux_version),
                 msg, values)
@@ -360,7 +360,7 @@ class HpiLibrary(Logging, PerConnectionStorage):
     def upgrade_state_should_be(self, expected_state, msg=None, values=True):
         expected_state = find_fumi_upgrade_state(expected_state)
         state = self._selected_fumi_bank().status()
-        asserts.fail_unless_equal(expected_state, state, msg, values)
+        asserts.assert_equal(expected_state, state, msg, values)
 
     def wait_until_upgrade_state_is(self, state, may_fail=False):
         state = find_fumi_upgrade_state(state)
@@ -388,7 +388,7 @@ class HpiLibrary(Logging, PerConnectionStorage):
     def source_status_should_be(self, expected_status, msg=None, values=True):
         expected_status = find_fumi_source_status(expected_status)
         info = self._selected_fumi_bank().source_info()
-        asserts.fail_unless_equal(expected_status, info.source_status.value,
+        asserts.assert_equal(expected_status, info.source_status.value,
                 msg, values)
 
     ###
@@ -425,18 +425,18 @@ class HpiLibrary(Logging, PerConnectionStorage):
             values=True):
         rdr = self._cp['selected_rdr']
         expected_num = int(expected_num)
-        asserts.fail_unless_equal(expected_num, rdr.dimi_num, msg, values)
+        asserts.assert_equal(expected_num, rdr.dimi_num, msg, values)
 
     def name_of_selected_test_should_be(self, expected_name, msg=None,
             values=True):
         test = self._cp['selected_dimi_test']
-        asserts.fail_unless_equal(expected_name, test.name, msg, values)
+        asserts.assert_equal(expected_name, test.name, msg, values)
 
     def service_impact_of_selected_test_should_be(self, expected_impact,
             msg=None, values=True):
         expected_impact = find_dimi_test_service_impact(expected_impact)
         test = self._cp['selected_dimi_test']
-        asserts.fail_unless_equal(expected_impact, test.service_impact, msg,
+        asserts.assert_equal(expected_impact, test.service_impact, msg,
                 values)
 
     def capabilities_of_selected_test_should_be(self, expected_capabilities,
@@ -444,14 +444,14 @@ class HpiLibrary(Logging, PerConnectionStorage):
         expected_capabilities = \
                 find_dimi_test_capabilities(expected_capabilities)
         test = self._cp['selected_dimi_test']
-        asserts.fail_unless_equal(expected_capabilities, test.capabilities,
+        asserts.assert_equal(expected_capabilities, test.capabilities,
                 msg, values)
 
     def selected_test_should_have_parameter(self, expected_parameter, msg=None,
             values=True):
         test = self._cp['selected_dimi_test']
         parameters = [p.name for p in test.parameters]
-        asserts.fail_unless(expected_parameter in parameters, msg)
+        asserts.assert_true(expected_parameter in parameters, msg)
 
     def default_value_of_parameter_of_selected_test_should_be(self,
             parameter_name, expected_default_value, msg=None, values=True):
@@ -463,7 +463,7 @@ class HpiLibrary(Logging, PerConnectionStorage):
         except IndexError:
             raise RuntimeError('Parameter with name "%s" not found.',
                     parameter_name)
-        asserts.fail_unless_equal(expected_default_value,
+        asserts.assert_equal(expected_default_value,
                 parameter.default, msg, values)
 
     def start_test(self, *parameters):
@@ -483,7 +483,7 @@ class HpiLibrary(Logging, PerConnectionStorage):
         expected_status = find_dimi_test_status(expected_status)
         test = self._cp['selected_dimi_test']
         status = test.status()[0]
-        asserts.fail_unless_equal(expected_status, status, msg, values)
+        asserts.assert_equal(expected_status, status, msg, values)
 
     def wait_until_test_status_is(self, status):
         status = find_dimi_test_status(status)
@@ -506,7 +506,7 @@ class HpiLibrary(Logging, PerConnectionStorage):
         expected_status = find_dimi_test_status_error(expected_status)
         test = self._cp['selected_dimi_test']
         result = test.results()
-        asserts.fail_unless_equal(expected_status, result.error_code, msg,
+        asserts.assert_equal(expected_status, result.error_code, msg,
                 values)
 
     def test_run_status_of_test_result_should_be(self, expected_status,
@@ -514,11 +514,11 @@ class HpiLibrary(Logging, PerConnectionStorage):
         expected_status = find_dimi_test_status(expected_status)
         test = self._cp['selected_dimi_test']
         result = test.results()
-        asserts.fail_unless_equal(expected_status, result.last_run_status, msg,
+        asserts.assert_equal(expected_status, result.last_run_status, msg,
                 values)
 
     def result_string_of_test_result_should_be(self, expected_string, msg=None,
             values=True):
         test = self._cp['selected_dimi_test']
         result = test.results()
-        asserts.fail_unless_equal(expected_string, result.result, msg, values)
+        asserts.assert_equal(expected_string, result.result, msg, values)
